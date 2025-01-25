@@ -57,6 +57,7 @@ export type CustomErrorParams = Partial<util.Omit<ZodCustomIssue, "code">>;
 export interface ZodTypeDef {
   errorMap?: ZodErrorMap;
   description?: string;
+  metadata?: object;
 }
 
 class ParseInputLazyPath implements ParseInput {
@@ -121,15 +122,23 @@ export type RawCreateParams =
       required_error?: string;
       message?: string;
       description?: string;
+      metadata?: object;
     }
   | undefined;
 export type ProcessedCreateParams = {
   errorMap?: ZodErrorMap;
   description?: string;
+  metadata?: object;
 };
 function processCreateParams(params: RawCreateParams): ProcessedCreateParams {
   if (!params) return {};
-  const { errorMap, invalid_type_error, required_error, description } = params;
+  const {
+    errorMap,
+    invalid_type_error,
+    required_error,
+    description,
+    metadata,
+  } = params;
   if (errorMap && (invalid_type_error || required_error)) {
     throw new Error(
       `Can't use "invalid_type_error" or "required_error" in conjunction with custom error map.`
@@ -148,7 +157,7 @@ function processCreateParams(params: RawCreateParams): ProcessedCreateParams {
     if (iss.code !== "invalid_type") return { message: ctx.defaultError };
     return { message: message ?? invalid_type_error ?? ctx.defaultError };
   };
-  return { errorMap: customMap, description };
+  return { errorMap: customMap, description, metadata };
 }
 
 export type SafeParseSuccess<Output> = {
@@ -178,6 +187,10 @@ export abstract class ZodType<
 
   get description() {
     return this._def.description;
+  }
+
+  get metadata() {
+    return this._def.metadata;
   }
 
   "~standard": StandardSchemaV1.Props<Input, Output>;
@@ -470,6 +483,7 @@ export abstract class ZodType<
     this.default = this.default.bind(this);
     this.catch = this.catch.bind(this);
     this.describe = this.describe.bind(this);
+    this.meta = this.meta.bind(this);
     this.pipe = this.pipe.bind(this);
     this.readonly = this.readonly.bind(this);
     this.isNullable = this.isNullable.bind(this);
@@ -558,6 +572,14 @@ export abstract class ZodType<
     return new This({
       ...this._def,
       description,
+    });
+  }
+
+  meta<T extends object>(metadata: T): this {
+    const This = (this as any).constructor;
+    return new This({
+      ...this._def,
+      metadata,
     });
   }
 
