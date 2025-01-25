@@ -1,4 +1,5 @@
 import { defaultErrorMap, getErrorMap } from "./errors.ts";
+import { FieldConfig } from "./fields-config.ts";
 import { enumUtil } from "./helpers/enumUtil.ts";
 import { errorUtil } from "./helpers/errorUtil.ts";
 import {
@@ -57,7 +58,7 @@ export type CustomErrorParams = Partial<util.Omit<ZodCustomIssue, "code">>;
 export interface ZodTypeDef {
   errorMap?: ZodErrorMap;
   description?: string;
-  metadata?: object;
+  metadata?: FieldConfig;
 }
 
 class ParseInputLazyPath implements ParseInput {
@@ -122,13 +123,13 @@ export type RawCreateParams =
       required_error?: string;
       message?: string;
       description?: string;
-      metadata?: object;
+      metadata?: FieldConfig;
     }
   | undefined;
 export type ProcessedCreateParams = {
   errorMap?: ZodErrorMap;
   description?: string;
-  metadata?: object;
+  metadata?: FieldConfig;
 };
 function processCreateParams(params: RawCreateParams): ProcessedCreateParams {
   if (!params) return {};
@@ -575,7 +576,7 @@ export abstract class ZodType<
     });
   }
 
-  meta<T extends object>(metadata: T): this {
+  meta(metadata: FieldConfig<TypeOf<this>>): this {
     const This = (this as any).constructor;
     return new This({
       ...this._def,
